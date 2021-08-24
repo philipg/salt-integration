@@ -1,0 +1,6 @@
+--- 
+disable_ssl_verification: True
+host: '192.168.100.33'
+user: 'administrator@vsphere.local'
+password: 'Password01#'
+port: '443'

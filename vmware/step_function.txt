@@ -1,0 +1,213 @@
+{
+    "order_id": 12345
+}
+
+{
+	"Comment": "BuildVM",
+	"StartAt": "Init",
+	"TimeoutSeconds": 3600,
+
+	"States": {
+		"Init": {
+			"Type": "Pass",
+			"Next": "GetOrder"
+		},
+        "GetOrder": {
+          "Type": "Task",
+          "Resource": "arn:aws:lambda:eu-west-2:470857774523:function:buildvm",
+ 			"Parameters": {
+				"op": "get_order",
+				"order_id.$": "$.order_id"
+			},
+          "Next": "GetIP"
+        },
+        "GetIP": {
+          "Type": "Task",
+          "Resource": "arn:aws:lambda:eu-west-2:470857774523:function:buildvm",
+  			"Parameters": {
+				"op": "get_ip",
+				"order_id.$": "$.order_id"
+			},
+          "Next": "GetPortGroup"
+        },
+         "GetPortGroup": {
+          "Type": "Task",
+          "Resource": "arn:aws:lambda:eu-west-2:470857774523:function:buildvm",
+   			"Parameters": {
+				"op": "get_portgroup",
+ 				"order_id.$": "$.order_id"
+			},
+          "Next": "GetCluster"
+        },
+        "GetCluster": {
+          "Type": "Task",
+          "Resource": "arn:aws:lambda:eu-west-2:470857774523:function:buildvm",
+   			"Parameters": {
+				"op": "get_cluster",
+				"order_id.$": "$.order_id"
+			},
+          "Next": "GetDatastore"
+        },
+        "GetDatastore": {
+           "Type": "Task",
+            "Resource": "arn:aws:lambda:eu-west-2:470857774523:function:buildvm",
+   			"Parameters": {
+				"op": "get_datastore",
+				"order_id.$": "$.order_id"
+			},
+            "Next": "GetTemplate"
+        },
+         "GetTemplate": {
+           "Type": "Task",
+            "Resource": "arn:aws:lambda:eu-west-2:470857774523:function:buildvm",
+   			"Parameters": {
+				"op": "get_template",
+				"order_id.$": "$.order_id"
+			},
+            "Next": "CloneVM"
+        },
+          "GenerateMetadata": {
+           "Type": "Task",
+            "Resource": "arn:aws:lambda:eu-west-2:470857774523:function:buildvm",
+   			"Parameters": {
+				"op": "get_metadata",
+				"order_id.$": "$.order_id"
+			},
+            "Next": "CMDBInit"
+        },
+           "CMDBInit": {
+           "Type": "Task",
+            "Resource": "arn:aws:lambda:eu-west-2:470857774523:function:buildvm",
+   			"Parameters": {
+				"op": "post_cmdb",
+				"order_id.$": "$.order_id"
+			},
+            "Next": "BootVM"
+        },
+            "BootVM": {
+           "Type": "Task",
+            "Resource": "arn:aws:lambda:eu-west-2:470857774523:function:buildvm",
+   			"Parameters": {
+				"op": "boot_vm",
+				"order_id.$": "$.order_id"
+			},
+            "Next": "Succeed"
+        },
+		"CloneVM": {
+			"Type": "Task",
+			"Resource": "arn:aws:lambda:eu-west-2:470857774523:function:buildvm",
+			"Parameters": {
+				"op": "clone_vm",
+				"order_id.$": "$.order_id"
+			},
+			"ResultPath": "$.CloneTaskResult",
+			"Next": "GetCloneStatusPause",
+			"Retry": [{
+				"ErrorEquals": ["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException",
+					"Lambda.TooManyRequestsException", "Lambda.EC2ThrottledException", "Lambda.ResourceNotReadyException"
+				],
+				"IntervalSeconds": 2,
+				"MaxAttempts": 6,
+				"BackoffRate": 2
+			}],
+			"Catch": [{
+				"ErrorEquals": ["States.ALL"],
+				"ResultPath": "$.error_info",
+				"Next": "HandleFail"
+			}]
+		},
+		"GetCloneStatusPause": {
+			"Type": "Wait",
+			"Seconds": 60,
+			"Next": "GetCloneStatus"
+		},
+		"GetCloneStatus": {
+			"Type": "Task",
+			"Resource": "arn:aws:lambda:eu-west-2:470857774523:function:buildvm",
+			"Parameters": {
+				"op": "get_clone_status",
+				"order_id.$": "$.order_id"
+			},
+			"ResultPath": "$.GetCloneStatusTaskResult",
+			"Next": "CheckCloneStatus",
+			"Retry": [{
+				"ErrorEquals": ["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException",
+					"Lambda.TooManyRequestsException", "Lambda.EC2ThrottledException", "Lambda.ResourceNotReadyException"
+				],
+				"IntervalSeconds": 2,
+				"MaxAttempts": 6,
+				"BackoffRate": 2
+			}],
+			"Catch": [{
+				"ErrorEquals": ["States.ALL"],
+				"ResultPath": "$.error_info",
+				"Next": "HandleFail"
+			}]
+		},
+		"CheckCloneStatus": {
+			"Type": "Choice",
+			"Choices": [{
+					"Variable": "$.GetCloneStatusTaskResult.State",
+					"StringEquals": "pending",
+					"Next": "GetCloneStatusPause"
+				},
+				{
+					"Variable": "$.GetCloneStatusTaskResult.State",
+					"StringEquals": "available",
+					"Next": "HandleSucceed"
+				}
+			],
+			"Default": "HandleFail"
+		},
+
+		"HandleFail": {
+			"Type": "Task",
+			"Resource": "arn:aws:lambda:eu-west-2:470857774523:function:buildvm",
+			"Parameters": {
+				"op": "set_status_complete_fail",
+				"order_id.$": "$.order_id"
+			},
+			"ResultPath": "$.HandleFailTaskResult",
+			"Next": "Fail",
+			"Retry": [{
+				"ErrorEquals": ["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException",
+					"Lambda.TooManyRequestsException", "Lambda.EC2ThrottledException", "Lambda.ResourceNotReadyException"
+				],
+				"IntervalSeconds": 2,
+				"MaxAttempts": 6,
+				"BackoffRate": 2
+			}]
+		},
+
+		"HandleSucceed": {
+			"Type": "Task",
+			"Resource": "arn:aws:lambda:eu-west-2:470857774523:function:buildvm",
+			"Parameters": {
+				"op": "set_status_complete_success",
+ 				"order_id.$": "$.order_id"
+			},
+			"ResultPath": "$.HandleSucceedTaskResult",
+			"Next": "GenerateMetadata",
+			"Retry": [{
+				"ErrorEquals": ["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException",
+					"Lambda.TooManyRequestsException", "Lambda.EC2ThrottledException", "Lambda.ResourceNotReadyException"
+				],
+				"IntervalSeconds": 2,
+				"MaxAttempts": 6,
+				"BackoffRate": 2
+			}],
+			"Catch": [{
+				"ResultPath": "$.error_info",
+				"ErrorEquals": ["States.ALL"],
+				"Next": "GenerateMetadata"
+			}]
+		},
+		"Fail": {
+			"Type": "Fail"
+		},
+
+		"Succeed": {
+			"Type": "Succeed"
+		}
+	}
+}
