@@ -13,8 +13,7 @@ disks:
     datastore: any
     size: 10
 guestid: ubuntu64Guest
-mem: 1024
-name: testvm57cloudinit
+mem: 2048
 networks: 
   - 
     name: VM Network
@@ -30,44 +29,20 @@ datacenter: lab
 cluster: cluster
 resourcepool: Resources
 iso: '[zpool0-vms] isos/chroot.iso'
-template: bakery-win2016-base-2021-08-23-21-39-release
-cloudinit_metadata: |
-  instance-id: cloud-vm
-  local-hostname: cloud-vm
-  admin-username: cloud-username
-  admin-password: Passw0rd!
-cloudinit_userdata: |
-  Content-Type: multipart/mixed; boundary="===123456789"
-  MIME-Version: 1.0
-
-  --===123456789
-  Content-Type: text/cloud-config; charset="us-ascii"
-  MIME-Version: 1.0
-    Content-Transfer-Encoding: 7bit
-    Content-Disposition: attachment; filename="cloud-config"
-
-    set_timezone: US/Pacific
-    set_hostname: philtest123
-
-  --===123456789
-  Content-Type: text/x-shellscript; charset="us-ascii"
-  MIME-Version: 1.0
-    Content-Transfer-Encoding: 7bit
-    Content-Disposition: attachment; filename="doPsStuff.ps1"
-
-  #ps1_sysnative
-  New-NetIpAddress -InterfaceAlias Ethernet0 -IPAddress 192.168.100.1 -PrefixLength 24 -DefaultGateway 192.168.100.2
-  Set-DnsClientServerAddress -InterfaceAlias Ethernet0 -ServerAddresses("8.8.8.8")
-  Set-DnsClient -InterfaceAlias Ethernet0 -ConnectionSpecificSuffix "tuxgrid.com"
-  Set-DnsClientGlobalSetting -SuffixSearchList @("tuxgrid.com")
-  Get-Disk | Where-Object PartitionStyle -Eq "RAW" | Initialize-Disk -PassThru | New-Partition -AssignDriveLetter -UseMaximumSize | Format-Volume
-  Disable-NetAdapterBinding -InterfaceAlias "Ethernet0" -ComponentID ms_tcpip6
-  Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False
-  Set-Service -Name TermService -StartType Automatic -Status Running
-  Set-Service -Name UmRdpService -Status Running
-  Set-Service -Name SessionEnv -Status Running
-  Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server'-name "fDenyTSConnections" -Value 0
-  $password = ConvertTo-SecureString Password01 -AsPlainText -Force
-  $newUser = New-LocalUser -Name "Phil" -Password $password -FullName "Phil Test" -Description "Phil Test"
-  Add-LocalGroupMember -Group "Administrators" -Member "Phil Test"
-
+template: bakery-win2016-base-2021-08-25-09-24-release
+name: test1234
+network:
+  ip: "198.244.132.187"
+  prefix: "28"
+  gateway: "198.244.132.177"
+  dns: 8.8.8.8
+  domain: tuxgrid.com
+metadata:
+  admin_username: "Admin"
+  admin_password: "Temp123!"
+  host: "test1234"
+  fqdn: "test1234.tuxgrid.com"
+  timezone: Europe/London
+salt:
+  minion_name: "test1234"
+  master_name: "saltmaster.tuxgrid.com"

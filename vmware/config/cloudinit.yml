@@ -1,0 +1,49 @@
+cloudinit_metadata: |
+  instance-id: {{ host }}
+  local-hostname: {{ host }}
+  admin-username: {{ admin_username }}
+  admin-password: {{ admin_password }}
+cloudinit_userdata: |-
+  Content-Type: multipart/mixed; boundary="===123456789"
+  MIME-Version: 1.0
+
+  --===123456789
+  Content-Type: text/cloud-config; charset="us-ascii"
+  MIME-Version: 1.0
+  Content-Transfer-Encoding: 7bit
+  Content-Disposition: attachment; filename="cloud-config"
+
+  set_timezone: {{ timezone }}
+  set_hostname: {{ fqdn }}
+
+  --===123456789
+  Content-Type: text/x-shellscript; charset="us-ascii"
+  MIME-Version: 1.0
+  Content-Transfer-Encoding: 7bit
+  Content-Disposition: attachment; filename="networking.ps1"
+
+  #ps1_sysnative
+  New-NetIpAddress -InterfaceAlias Ethernet0 -IPAddress {{ network_ip }} -PrefixLength {{ network_prefix }} -DefaultGateway {{ network_gateway }}
+  Set-DnsClientServerAddress -InterfaceAlias Ethernet0 -ServerAddresses("{{ network_dns }}")
+  Set-DnsClient -InterfaceAlias Ethernet0 -ConnectionSpecificSuffix "{{ domain }}"
+  Set-DnsClientGlobalSetting -SuffixSearchList @("{{ domain }}")
+  Get-Disk | Where-Object PartitionStyle -Eq "RAW" | Initialize-Disk -PassThru | New-Partition -AssignDriveLetter -UseMaximumSize | Format-Volume
+  Disable-NetAdapterBinding -InterfaceAlias "Ethernet0" -ComponentID ms_tcpip6
+  Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False
+  Set-Service -Name TermService -StartType Automatic -Status Running
+  Set-Service -Name UmRdpService -Status Running
+  Set-Service -Name SessionEnv -Status Running
+  Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server'-name "fDenyTSConnections" -Value
+
+  --===123456789
+  Content-Type: text/x-shellscript; charset="us-ascii"
+  MIME-Version: 1.0
+  Content-Transfer-Encoding: 7bit
+  Content-Disposition: attachment; filename="saltstack.ps1"
+
+  #ps1_sysnative
+  [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+  $source = 'https://repo.saltproject.io/windows/Salt-Minion-3003.2-Py3-AMD64-Setup.exe'
+  $destination = 'c:\Salt-Minion-3003.2-Py3-AMD64-Setup.exe'
+  Invoke-WebRequest -Uri $source -OutFile $destination
+  cmd /c "c:\Salt-Minion-3003.2-Py3-AMD64-Setup.exe /S /master={{ salt_master }} /minion-name={{ minion_name }}"

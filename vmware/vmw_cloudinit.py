@@ -1,6 +1,5 @@
 import base64
 import gzip
-import builder
 
 def encode(data):
     gzipped = gzip.compress(bytes(data, 'utf-8'))

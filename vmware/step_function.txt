@@ -1,8 +1,4 @@
 {
-    "order_id": 12345
-}
-
-{
 	"Comment": "BuildVM",
 	"StartAt": "Init",
 	"TimeoutSeconds": 3600,
@@ -91,8 +87,49 @@
 				"op": "boot_vm",
 				"order_id.$": "$.order_id"
 			},
+            "Next": "GetMinionKeyStatus"
+        },
+            "GetMinionKeyStatus": {
+           "Type": "Task",
+            "Resource": "arn:aws:lambda:eu-west-2:470857774523:function:buildvm",
+   			"Parameters": {
+				"op": "get_minion_key_status",
+				"order_id.$": "$.order_id"
+			},
+            "ResultPath": "$.GetMinionKeyStatusTaskResult",
+            "Next": "CheckMinionKeyStatus"
+        },
+             "RegisterMinionKey": {
+           "Type": "Task",
+            "Resource": "arn:aws:lambda:eu-west-2:470857774523:function:buildvm",
+   			"Parameters": {
+				"op": "get_master_key_accept",
+				"order_id.$": "$.order_id"
+			},
             "Next": "Succeed"
         },
+		"CheckMinionKeyStatus": {
+			"Type": "Choice",
+			"Choices": [{
+					"Variable": "$.GetMinionKeyStatusTaskResult.pre",
+					"BooleanEquals": false,
+					"Next": "GetMinionKeyStatusPause"
+				},
+				{
+					"Variable": "$.GetMinionKeyStatusTaskResult.pre",
+					"BooleanEquals": true,
+					"Next": "RegisterMinionKey"
+				}
+			],
+			"Default": "HandleFail"
+		},
+ 		"GetMinionKeyStatusPause": {
+			"Type": "Wait",
+			"Seconds": 60,
+			"Next": "GetMinionKeyStatus"
+		},
+      
+      
 		"CloneVM": {
 			"Type": "Task",
 			"Resource": "arn:aws:lambda:eu-west-2:470857774523:function:buildvm",
@@ -126,7 +163,8 @@
 			"Resource": "arn:aws:lambda:eu-west-2:470857774523:function:buildvm",
 			"Parameters": {
 				"op": "get_clone_status",
-				"order_id.$": "$.order_id"
+				"order_id.$": "$.order_id",
+                "CloneTaskResult.$": "$.CloneTaskResult"
 			},
 			"ResultPath": "$.GetCloneStatusTaskResult",
 			"Next": "CheckCloneStatus",
@@ -148,13 +186,18 @@
 			"Type": "Choice",
 			"Choices": [{
 					"Variable": "$.GetCloneStatusTaskResult.State",
-					"StringEquals": "pending",
+					"StringEquals": "running",
 					"Next": "GetCloneStatusPause"
 				},
 				{
 					"Variable": "$.GetCloneStatusTaskResult.State",
-					"StringEquals": "available",
+					"StringEquals": "success",
 					"Next": "HandleSucceed"
+				},
+				{
+					"Variable": "$.GetCloneStatusTaskResult.State",
+					"StringEquals": "failure",
+					"Next": "HandleFail"
 				}
 			],
 			"Default": "HandleFail"
