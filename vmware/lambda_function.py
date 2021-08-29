@@ -180,20 +180,9 @@ def lambda_handler(event: Any, context: Any) -> Any:
     """Handle the lambda event operation"""
     
     operation = event['op']
-    order_id = event['order_id']
+    order_id = int(event['order_id'])
 
     action_class = getattr(sys.modules[__name__], 'Action')
     action_instance = action_class(order_id)
     action_instance_method = getattr(action_instance, "handle_" + operation)
     return action_instance_method(event)
-
-# if __name__ == '__main__':
-#     lambda_handler(event={'op': 'clone_vm', 'order_id': '1'}, context='')
-    
-#     while True:
-#         pre = lambda_handler(event={'op': 'get_minion_key_status', 'order_id': '1'}, context='')['pre']
-#         print('waiting...')
-#         if pre:
-#             lambda_handler(event={'op': 'get_master_key_accept', 'order_id': '1'}, context='')
-#             print('salt is registered')
-#             break
