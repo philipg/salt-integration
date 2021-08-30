@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      #ajaxSpinnerImage {
+           display: none;
+      }
+    </style>
+    <title>VMBuilder</title>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css"/>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+    <script src="form.js"></script>
+</head>
+  <body>
+    <div class="col-sm-6 col-sm-offset-3">
+      <h1>VMBuilder</h1>      
+      <form action="" method="POST" id="vmbuilder" class="vmbuilder">
+        <div id="id-group" class="form-group">
+          <label for="orderid">Order Id</label>
+          <input
+            type="text"
+            class="form-control"
+            id="orderid"
+            name="orderid"
+            placeholder="Order Id"
+          />
+        </div>
+        <div id="name-group" class="form-group">
+          <label for="name">Name</label>
+          <input
+            type="text"
+            class="form-control"
+            id="name"
+            name="name"
+            placeholder="VM Name"
+          />
+        </div>
+        <div id="email-group" class="form-group">
+          <label for="email">Email</label>
+          <input
+            type="text"
+            class="form-control"
+            id="email"
+            name="email"
+            placeholder="email@example.com"
+          />
+        </div>
+
+        <button type="submit" class="btn btn-success">
+          Submit
+        </button>
+      </form>
+      <div id="ajaxSpinnerContainer">
+        <img src="ajax-loader.gif" id="ajaxSpinnerImage" title="working..." />
+    </div>
+
+    </div>
+  </body>
+</html>

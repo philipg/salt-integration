@@ -30,9 +30,9 @@ cluster: cluster
 resourcepool: Resources
 iso: '[zpool0-vms] isos/chroot.iso'
 template: bakery-win2016-base-2021-08-25-09-24-release
-name: test1234
+name: test12349
 network:
-  ip: "198.244.132.187"
+  ip: "198.244.132.185"
   prefix: "28"
   gateway: "198.244.132.177"
   dns: 8.8.8.8
@@ -40,9 +40,9 @@ network:
 metadata:
   admin_username: "Admin"
   admin_password: "Temp123!"
-  host: "test1234"
-  fqdn: "test1234.tuxgrid.com"
+  host: "test12349"
+  fqdn: "test12349.tuxgrid.com"
   timezone: Europe/London
 salt:
-  minion_name: "test1234"
+  minion_name: "test12349"
   master_name: "saltmaster.tuxgrid.com"
